@@ -1,3 +1,10 @@
+/*
+ * @Description: 
+ * @Author: Runjie
+ * @Date: 2024-12-09 22:53:43
+ * @LastEditors: Runjie
+ * @LastEditTime: 2024-12-09 22:58:52
+ */
 import type { Config } from "tailwindcss";
 
 export default {
@@ -6,6 +13,7 @@ export default {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
