@@ -1,6 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface RMResult {
   avg: number;
@@ -20,10 +37,10 @@ interface InputState {
 
 const RMCalculator = () => {
   const [rmResults, setRmResults] = useState<RMResult[]>([]);
-  const [input, setInput] = useState<InputState>({ weight: 0, reps: 0 });
+  const [input, setInput] = useState<InputState>({ weight: 0, reps: 1 });
 
   const calculateOneRM = (n: InputState): RMResult[] => {
-    if (!n.weight || isNaN(n.weight)) {
+    if (isNaN(n.weight) || n.weight < 0 || isNaN(n.reps) || n.reps < 1) {
       setRmResults([]);
       return [];
     }
@@ -130,69 +147,87 @@ const RMCalculator = () => {
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="weight">
                 重量 (kg)
               </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              <Input
                 id="weight"
                 type="number"
-                value={input.weight || ''}
-                onChange={(e) => setInput(prev => ({ ...prev, weight: parseFloat(e.target.value) || 0 }))}
+                placeholder="输入重量"
+                value={isNaN(input.weight) ? '' : input.weight.toString()} 
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const rawValue = e.target.value;
+                  if (rawValue === '') {
+                    setInput(prev => ({ ...prev, weight: NaN }));
+                  } else {
+                    const value = parseFloat(rawValue);
+                    setInput(prev => ({ ...prev, weight: isNaN(value) ? NaN : (value < 0 ? 0 : value) }));
+                  }
+                }}
+                className="w-full"
               />
             </div>
             <div className="flex-1">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="reps">
                 重复次数
               </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="reps"
-                type="number"
-                value={input.reps || ''}
-                onChange={(e) => setInput(prev => ({ ...prev, reps: parseInt(e.target.value) || 0 }))}
-              />
+              <Select
+                value={isNaN(input.reps) ? '' : input.reps.toString()} // Handle NaN for placeholder
+                onValueChange={(selectedValue: string) => {
+                  if (selectedValue === '') { // Should not happen with current Select setup but good practice
+                    setInput(prev => ({ ...prev, reps: NaN }));
+                  } else {
+                    setInput(prev => ({ ...prev, reps: parseInt(selectedValue, 10) }));
+                  }
+                }}
+              >
+                <SelectTrigger id="reps" className="w-full">
+                  <SelectValue placeholder="选择次数" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
         {rmResults.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="p-4 bg-gray-100 text-gray-900 font-semibold border border-gray-200">RM</th>
-                  <th className="p-4 bg-blue-100 text-gray-900 font-semibold border border-gray-200">平均值</th>
-                  <th className="p-4 bg-green-100 text-gray-900 font-semibold border border-gray-200">Epley*</th>
-                  <th className="p-4 bg-green-100 text-gray-900 font-semibold border border-gray-200">Brzycki*</th>
-                  <th className="p-4 bg-gray-100 text-gray-900 font-semibold border border-gray-200">Lander</th>
-                  <th className="p-4 bg-gray-100 text-gray-900 font-semibold border border-gray-200">Lombardi</th>
-                  <th className="p-4 bg-gray-100 text-gray-900 font-semibold border border-gray-200">Mayhew</th>
-                  <th className="p-4 bg-gray-100 text-gray-900 font-semibold border border-gray-200">O&apos;Conner</th>
-                  <th className="p-4 bg-gray-100 text-gray-900 font-semibold border border-gray-200">Wathan</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableCaption>不同公式计算的重复最大重量 (RM) 结果。</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-semibold">RM</TableHead>
+                  <TableHead className="font-semibold text-right">平均值</TableHead>
+                  <TableHead className="font-semibold text-right">Epley*</TableHead>
+                  <TableHead className="font-semibold text-right">Brzycki*</TableHead>
+                  <TableHead className="font-semibold text-right">Lander</TableHead>
+                  <TableHead className="font-semibold text-right">Lombardi</TableHead>
+                  <TableHead className="font-semibold text-right">Mayhew</TableHead>
+                  <TableHead className="font-semibold text-right">O&apos;Conner</TableHead>
+                  <TableHead className="font-semibold text-right">Wathan</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rmResults.map((rm, index) => (
-                  <tr key={index}>
-                    <td className="p-4 text-center font-bold border border-gray-200 text-gray-900">
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
                       {index + 1}RM
-                    </td>
-                    <td className="p-4 text-center font-bold bg-blue-100 text-gray-900 border border-gray-200">
-                      {Math.floor(rm.avg)}
-                    </td>
-                    <td className="p-4 text-center font-bold bg-green-100 text-gray-900 border border-gray-200">
-                      {Math.floor(rm.epl)}
-                    </td>
-                    <td className="p-4 text-center font-bold bg-green-100 text-gray-900 border border-gray-200">
-                      {Math.floor(rm.brz)}
-                    </td>
-                    <td className="p-4 text-center border border-gray-200 text-gray-900">{Math.floor(rm.lan)}</td>
-                    <td className="p-4 text-center border border-gray-200 text-gray-900">{Math.floor(rm.lom)}</td>
-                    <td className="p-4 text-center border border-gray-200 text-gray-900">{Math.floor(rm.may)}</td>
-                    <td className="p-4 text-center border border-gray-200 text-gray-900">{Math.floor(rm.oco)}</td>
-                    <td className="p-4 text-center border border-gray-200 text-gray-900">{Math.floor(rm.wat)}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{Math.floor(rm.avg)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.epl)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.brz)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.lan)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.lom)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.may)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.oco)}</TableCell>
+                    <TableCell className="text-right">{Math.floor(rm.wat)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
